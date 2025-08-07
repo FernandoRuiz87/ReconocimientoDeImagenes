@@ -27,9 +27,9 @@ def procesar_frame(frame):
     frame_blur = cv.GaussianBlur(frame_gray, (21, 21), 0)
     return frame_blur
 
-def detectar_movimiento(frame_anterior, frame_actual, area_minima, umbral):
-    """Detecta movimiento entre dos frames."""
-    delta = cv.absdiff(frame_anterior, frame_actual)
+def detectar_movimiento(fondo, frame_actual, area_minima, umbral):
+    """Detecta movimiento entre fondo estático y el frame actual."""
+    delta = cv.absdiff(fondo, frame_actual)
     _, thresh = cv.threshold(delta, umbral, 255, cv.THRESH_BINARY)
     thresh = cv.dilate(thresh, None, iterations=2)
     contours, _ = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -58,12 +58,12 @@ def main():
     if cap is None:
         return
 
-    # Obtener y procesar el primer frame
-    frame1 = obtener_primer_frame(cap)
-    if frame1 is None:
+    # Obtener y procesar el primer frame (FONDO ESTÁTICO)
+    fondo = obtener_primer_frame(cap)
+    if fondo is None:
         cap.release()
         return
-    frame1 = cv.GaussianBlur(frame1, (21, 21), 0)
+    fondo = cv.GaussianBlur(fondo, (21, 21), 0)
 
     # Crear ventana y sliders para ajustar parámetros
     cv.namedWindow('Detección de Movimiento')
@@ -83,8 +83,8 @@ def main():
         # Procesar frame actual
         frame2_proc = procesar_frame(frame2)
 
-        # Detectar movimiento usando valores de los sliders
-        thresh, contornos, _ = detectar_movimiento(frame1, frame2_proc, area_minima, umbral)
+        # Detectar movimiento usando fondo estático
+        thresh, contornos, _ = detectar_movimiento(fondo, frame2_proc, area_minima, umbral)
 
         # Dibujar los contornos detectados sobre el frame original
         dibujar_contornos(frame2, contornos)
@@ -97,8 +97,7 @@ def main():
         if cv.waitKey(30) & 0xFF == ord('q'):
             break
 
-        # Actualizar el frame anterior
-        frame1 = frame2_proc
+        # NOTA: No se actualiza el fondo. Es estático.
 
     cap.release()
     cv.destroyAllWindows()
