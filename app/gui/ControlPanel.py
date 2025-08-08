@@ -60,6 +60,7 @@ class ControlPanel(ttk.Frame):
             bootstyle="danger",
             width=20,
             state="disabled",
+            command=self._stop_video,
         )
         self.stop_btn.pack(pady=10)
 
@@ -103,5 +104,26 @@ class ControlPanel(ttk.Frame):
     def _toggle_play(self):
         if self.video_panel.toggle_play():
             self.play_btn.config(text="⏸️ Pausar")
+            print("Reproduciendo video...")
+            # Si el video se esta reproduciendo actualizar el boton de detener
+            self.stop_btn.config(state="normal")
         else:
             self.play_btn.config(text="▶️ Reproducir")
+            print("Video pausado.")
+
+    def _stop_video(self):
+        self.video_panel.is_playing = False
+        # Reinicia al primer frame
+        self.video_panel.video_processor.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        # Borra frame anterior procesado y el previo
+        self.video_panel.video_processor.prev_frame = None
+        # Espera breve para asegurar que el cap esté listo
+        self.after(30, self._show_first_frame)
+
+        self.play_btn.config(text="▶️ Reproducir")
+        self.stop_btn.config(state="disabled")
+
+    def _show_first_frame(self):
+      frame = self.video_panel.video_processor.process_frame()
+      if frame is not None:
+          self.video_panel._display_frame(frame)
